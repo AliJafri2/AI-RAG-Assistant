@@ -17,7 +17,11 @@ Smart Generation: Connects to OpenAI GPT-3.5 to generate natural language answer
 ## 🛠️ Tech Stack
 
 Frontend: Streamlit
+
 LLM Framework: LangChain
+
 Vector Store: FAISS (Facebook AI Similarity Search)
+
 Embeddings: HuggingFace `all-MiniLM-L6-v2`
+
 Model: OpenAI GPT-3.5 Turbo
