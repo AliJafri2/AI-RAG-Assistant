@@ -5,7 +5,7 @@ A Python-based RAG (Retrieval-Augmented Generation) tool that allows users to ch
 ## 🎥 Demo
 
 *Check out the demo!*
-<video src="PDFChat.mp4" controls="controls" style="max-width: 100%;">
+<video src="demo.mp4" controls="controls" muted="muted" style="max-width: 100%;">
 </video>
 
 ## 🚀 Features
