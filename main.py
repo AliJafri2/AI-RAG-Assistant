@@ -53,7 +53,7 @@ else:
     with col1:
         st.subheader("💬 Chat")
         
-        chat_container = st.container(height=900, border=True)
+        chat_container = st.container(height=550, border=True)
         
         with chat_container:
             if not st.session_state.messages:
@@ -74,9 +74,9 @@ else:
     with col2:
         st.subheader("📄 Viewer")
         
-        with st.container(height=960, border=True):
+        with st.container(height=550, border=True):
             binary_data = uploaded_file.getvalue()
-            pdf_viewer(input=binary_data, height=950)
+            pdf_viewer(input=binary_data, height=550)
 
     if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
         
