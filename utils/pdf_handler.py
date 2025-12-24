@@ -22,6 +22,7 @@ class RAGPipeline:
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
             splits = text_splitter.split_documents(docs)
 
+            #faiss integration
             self.vector_store = FAISS.from_documents(splits, self.embeddings)
             return f"Indexed {len(splits)} chunks."
         finally:
