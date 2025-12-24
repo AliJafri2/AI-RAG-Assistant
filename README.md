@@ -15,7 +15,7 @@ Local Embeddings: Uses SentenceTransformer (HuggingFace) for free, local vector 
 
 Vector Search: Implements FAISS for efficient similarity search and retrieval.
 
-Smart Generation: Connects to OpenAI GPT-3.5 to generate natural language answers based on retrieved context.
+Smart Generation: Connects to OpenAI GPT-4o to generate natural language answers based on retrieved context.
 
 ## 🛠️ Tech Stack
 
@@ -27,4 +27,4 @@ Vector Store: FAISS (Facebook AI Similarity Search)
 
 Embeddings: HuggingFace `all-MiniLM-L6-v2`
 
-Model: OpenAI GPT-3.5 Turbo
+Model: OpenAI GPT-4o
