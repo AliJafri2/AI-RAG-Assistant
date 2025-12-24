@@ -7,7 +7,6 @@ from langchain_community.vectorstores import FAISS
 
 class RAGPipeline:
     def __init__(self):
-        # Load local SentenceTransformer model (Resume Claim)
         print("Loading SentenceTransformer model...")
         self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
         self.vector_store = None
@@ -18,13 +17,11 @@ class RAGPipeline:
             tmp_path = tmp_file.name
 
         try:
-            # 1. Load & Split (Resume Claim: "preprocessing and chunking")
             loader = PyPDFLoader(tmp_path)
             docs = loader.load()
             text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
             splits = text_splitter.split_documents(docs)
 
-            # 2. Index (Resume Claim: "FAISS indexing")
             self.vector_store = FAISS.from_documents(splits, self.embeddings)
             return f"Indexed {len(splits)} chunks."
         finally:
