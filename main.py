@@ -48,12 +48,12 @@ if not uploaded_file:
     """)
 
 else:
-    col1, col2 = st.columns(2)
+    spacer1, col1, col2, spacer2 = st.columns([0.5, 5, 5, 0.5])
 
     with col1:
         st.subheader("💬 Chat")
         
-        chat_container = st.container(height=650, border=True)
+        chat_container = st.container(height=750, border=True)
         
         with chat_container:
             if not st.session_state.messages:
@@ -74,9 +74,9 @@ else:
     with col2:
         st.subheader("📄 Viewer")
         
-        with st.container(height=710, border=True):
+        with st.container(height=810, border=True):
             binary_data = uploaded_file.getvalue()
-            pdf_viewer(input=binary_data, height=700)
+            pdf_viewer(input=binary_data, height=800)
 
     if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
         
