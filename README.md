@@ -5,7 +5,7 @@ A Python-based RAG (Retrieval-Augmented Generation) tool that allows users to ch
 ## 🎥 Demo
 
 *Check out the demo!*
-<video src="demo.mp4" controls="controls" muted="muted" style="max-width: 100%;">
+<video src="[demo.mp4](https://github.com/user-attachments/assets/e20cefa4-849e-48e4-a019-d2ba2bde99ab)" controls="controls" style="max-width: 100%;">
 </video>
 
 ## 🚀 Features
