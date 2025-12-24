@@ -1,5 +1,5 @@
 import streamlit as st
-import time # <--- Added for animation
+import time
 import base64
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_retrieval_chain
@@ -96,17 +96,18 @@ else:
                 )
                 
                 system_prompt = (
-                    "You are an expert academic professor. "
-                    "Use the provided context to answer the student's question. "
+                    "You are a versatile and intelligent AI assistant. "
+                    "Your task is to answer the user's question based on the provided document context. "
                     "\n\n"
-                    "Rules:"
-                    "\n1. If the answer is not explicitly in the context, say 'I cannot find that specific information in the retrieved text,' but try to summarize what IS available."
-                    "\n2. Ignore headers and footers, but use the main text content."
-                    "\n3. Always cite the text."
+                    "**Guidelines:**"
+                    "\n1. **Be Helpful & Direct:** Answer the question simply and clearly. Avoid overly academic language unless the document is technical."
+                    "\n2. **Handle Broad Questions:** If the user asks for a summary or 'about this file', synthesize the available chunks into a coherent overview."
+                    "\n3. **Bridge Gaps:** If the exact answer isn't explicitly stated, use the context to provide the best possible relevant information. Start with 'Based on the context...'"
+                    "\n4. **Fallback:** Only say 'I don't know' if the context is completely irrelevant to the question."
                     "\n\n"
-                    "--- CONTEXT START ---"
+                    "--- DOCUMENT CONTEXT ---"
                     "\n{context}"
-                    "\n--- CONTEXT END ---"
+                    "\n--- END CONTEXT ---"
                 )
                 
                 prompt_template = ChatPromptTemplate.from_messages([
