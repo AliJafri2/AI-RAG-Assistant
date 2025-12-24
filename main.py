@@ -1,88 +1,112 @@
 import streamlit as st
+import time # <--- Added for animation
 import base64
 from langchain_openai import ChatOpenAI
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
+from streamlit_pdf_viewer import pdf_viewer
 from utils.pdf_handler import RAGPipeline
 
 st.set_page_config(page_title="PDFChat", layout="wide")
-st.title("📄 PDFChat: Side-by-Side Assistant")
-
-st.markdown("""
-**To begin follow these easy steps:**
-1. Upload a PDF (sidebar)
-2. Click **"Ingest Document"**
-3. Begin chatting!
-""")
-
-# pdf viewer
-def display_pdf(uploaded_file):
-    bytes_data = uploaded_file.getvalue()
-    base64_pdf = base64.b64encode(bytes_data).decode('utf-8')
-    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 if "rag_pipeline" not in st.session_state:
-    with st.spinner("Loading AI Models..."):
-        st.session_state.rag_pipeline = RAGPipeline()
+    st.session_state.rag_pipeline = RAGPipeline()
+
+def stream_text(text):
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.02)
+
+def submit():
+    user_input = st.session_state.widget
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        st.session_state.widget = ""
 
 with st.sidebar:
     st.header("Upload Document")
     uploaded_file = st.file_uploader("Upload PDF", type="pdf")
-    if uploaded_file and st.button("Ingest Document"):
-        with st.spinner("Processing PDF (Chunking & Embedding)..."):
-            status = st.session_state.rag_pipeline.process_pdf(uploaded_file)
-            st.success(status)
-
-col1, col2 = st.columns([1, 1])
-
-with col1:
-    st.subheader("💬 Chat")
     
-    chat_container = st.container(height=600)
-    
-    with chat_container:
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    if uploaded_file:
+        if "last_uploaded" not in st.session_state or st.session_state.last_uploaded != uploaded_file.name:
+            with st.spinner("Processing PDF..."):
+                status = st.session_state.rag_pipeline.process_pdf(uploaded_file)
+                st.session_state.last_uploaded = uploaded_file.name
+                st.success(status)
 
-    #chat input
-    if prompt := st.chat_input("Ask a question about your PDF..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with chat_container.chat_message("user"):
-            st.markdown(prompt)
+if not uploaded_file:
+    st.title("📄 PDFChat: AI Assistant")
+    st.markdown("""
+    **To begin follow these easy steps:**
+    1. Upload a PDF (sidebar)
+    2. Wait for the green "Success" message
+    3. Begin chatting!
+    """)
 
+else:
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("💬 Chat")
+        
+        chat_container = st.container(height=650, border=True)
+        
+        with chat_container:
+            if not st.session_state.messages:
+                 st.info("👋 Ask a question about the document to begin.")
+            
+            for message in st.session_state.messages:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])
+
+        st.text_input(
+            "Ask a question...", 
+            key="widget", 
+            on_change=submit,
+            label_visibility="collapsed",
+            placeholder="Type your question here..."
+        )
+
+    with col2:
+        st.subheader("📄 Viewer")
+        
+        with st.container(height=710, border=True):
+            binary_data = uploaded_file.getvalue()
+            pdf_viewer(input=binary_data, height=700)
+
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+        
         with chat_container.chat_message("assistant"):
             retriever = st.session_state.rag_pipeline.get_retriever()
             
+            if retriever:
+                retriever.search_kwargs['k'] = 10
+            
             if not retriever:
-                st.warning("⚠️ Please upload and ingest a document first.")
+                st.error("⚠️ Pipeline not ready. Please re-upload the document.")
             else:
                 llm = ChatOpenAI(
                     api_key=st.secrets["OPENAI_API_KEY"], 
-                    model="gpt-3.5-turbo",
+                    model="gpt-4o",
                     temperature=0
                 )
                 
                 system_prompt = (
-                "You are an expert academic professor. Your goal is to help a student "
-                "understand the material deeply, not just give short answers. "
-                "You are provided with snippets from a textbook or paper below. "
-                "\n\n"
-                "Guidelines for your response:"
-                "\n1. **Be Pedagogical:** Explain concepts clearly. If a term is complex, define it first."
-                "\n2. **Use Structure:** Use bullet points, numbered lists, or bold text to break down long explanations."
-                "\n3. **Cite Evidence:** Explicitly reference the text (e.g., 'According to the document...') to back up your claims."
-                "\n4. **Admit Gaps:** If the answer is not in the provided context, state clearly: "
-                "'The provided text does not contain information about this.' Do not make things up."
-                "\n\n"
-                "--- TEXTBOOK CONTEXT START ---"
-                "\n{context}"
-                "\n--- TEXTBOOK CONTEXT END ---"
+                    "You are an expert academic professor. "
+                    "Use the provided context to answer the student's question. "
+                    "\n\n"
+                    "Rules:"
+                    "\n1. If the answer is not explicitly in the context, say 'I cannot find that specific information in the retrieved text,' but try to summarize what IS available."
+                    "\n2. Ignore headers and footers, but use the main text content."
+                    "\n3. Always cite the text."
+                    "\n\n"
+                    "--- CONTEXT START ---"
+                    "\n{context}"
+                    "\n--- CONTEXT END ---"
                 )
                 
                 prompt_template = ChatPromptTemplate.from_messages([
@@ -93,15 +117,15 @@ with col1:
                 question_answer_chain = create_stuff_documents_chain(llm, prompt_template)
                 rag_chain = create_retrieval_chain(retriever, question_answer_chain)
 
-                with st.spinner("Thinking..."):
-                    response = rag_chain.invoke({"input": prompt})
-                    st.markdown(response["answer"])
-                    
-                st.session_state.messages.append({"role": "assistant", "content": response["answer"]})
-
-with col2:
-    st.subheader("📄 Document Viewer")
-    if uploaded_file:
-        display_pdf(uploaded_file)
-    else:
-        st.info("Upload a PDF to see it here.")
+                with st.spinner("Analyzing text..."):
+                    try:
+                        last_question = st.session_state.messages[-1]["content"]
+                        response = rag_chain.invoke({"input": last_question})
+                        
+                        full_response = response["answer"]
+                        st.write_stream(stream_text(full_response))
+                        
+                        st.session_state.messages.append({"role": "assistant", "content": full_response})
+                        
+                    except Exception as e:
+                        st.error(f"Error generating response: {e}")
